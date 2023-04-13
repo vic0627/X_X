@@ -1,5 +1,8 @@
 import { delay, reCall } from "./timer/timer.js";
 
+const $url = window.location.href;
+const $path = $url.substring(0, $url.lastIndexOf("/") + 1);
+
 export default class X_X {
   constructor(el = "div", attrs = {}, events = []) {
     this.element;
@@ -8,8 +11,6 @@ export default class X_X {
     this.events = events;
     return this;
   }
-  $url = window.location.href;
-  $path = this.$url.substring(0, this.$url.lastIndexOf("/") + 1);
   log() {
     console.log(this);
     return this;
@@ -23,7 +24,7 @@ export default class X_X {
   stylesheet = null;
   linkCSS(href) {
     this.stylesheet = document.createElement("link");
-    this.stylesheet.href = href.replace("@", this.$path);
+    this.stylesheet.href = href.replace("@", $path);
     this.stylesheet.rel = "stylesheet";
     return this;
   }
@@ -33,8 +34,6 @@ export default class X_X {
   setup(callback = () => {}) {
     this.setupcallback = () => {
       callback();
-      // console.log(this.stylesheet)
-      // if (this.stylesheet) document.head.appendChild(this.stylesheet);
     };
     return this;
   }
@@ -102,6 +101,9 @@ export default class X_X {
     child ? this.element.removeChild(child) : this.element.remove();
     if (this.stylesheet) this.stylesheet.remove();
     return this;
+  }
+  use(plugin) {
+    this[plugin.toString()] = plugin;
   }
   class(className, add = true) {
     add
