@@ -1,4 +1,4 @@
-import { delay } from "./timer/timer.js";
+import { delay, reCall } from "./timer/timer.js";
 
 export default class X_X {
   constructor(el = "div", attrs = {}, events = []) {
@@ -116,7 +116,10 @@ export default class X_X {
     return this;
   }
   text(para) {
-    this.element.innerText = para;
+    reCall((timer) => {
+      if (this.element) this.element.innerText = para;
+      clearInterval(timer);
+    });
     return this;
   }
   html(para) {
