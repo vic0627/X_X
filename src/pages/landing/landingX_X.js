@@ -1,7 +1,7 @@
 import x_x from "../../../main.js";
 
 const LandingX_X = x_x
-  .createChild("main", { class: "landing" })
+  .createNode("main", { class: "landing" })
   .linkCSS("@/src/pages/landing/landingX_X.css");
 
 const landingH2 = LandingX_X.createChild("h1", {

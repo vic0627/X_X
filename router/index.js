@@ -1,10 +1,10 @@
 import XRouter from "../modules/XRouter/XRouter.js";
-
+import { reDirectUrl } from "../modules/url/url.js";
 const routes = [
   {
-    path: "/",
+    path: "/X_X",
     name: "landing",
-    component: "@/src/pages/landing/landingX_X.js",
+    component: () => import(reDirectUrl("@/src/pages/landing/landingX_X.js")),
   },
 ];
 

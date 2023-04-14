@@ -6,12 +6,12 @@ export default class XRouter {
   }
 
   loadInitialRoute() {
-    const pathName = window.location.pathname;
-    this.navigate(pathName);
+    this.navigate("/X_X");
   }
 
   navigate(pathName) {
     const route = this.matchRoute(pathName);
+    console.log(route);
     if (route) {
       this.currentRoute = route;
       this.renderRoute(route);
@@ -25,7 +25,6 @@ export default class XRouter {
   }
 
   renderRoute(route) {
-    const app = document.getElementById("app");
-    app.innerHTML = route.component;
+    history.pushState(route.name, "", route.path);
   }
 }

@@ -1,14 +1,21 @@
 import { delay, reCall } from "./timer/timer.js";
-
-const $url = window.location.href;
-const $path = $url.substring(0, $url.lastIndexOf("/") + 1);
-
+import { reDirectUrl } from "./url/url.js";
+import XRouter from "./XRouter/XRouter.js";
 export default class X_X {
   constructor(el = "div", attrs = {}, events = []) {
-    this.element;
-    this.child = [];
-    this.vNode = { el, attrs };
-    this.events = events;
+    this.element = null; // real DOM
+    this.children = []; // DOM tree of "this"
+    this.vNode = { el, attrs }; // virtual DOM
+    this.events = events; // types & handler
+
+    // hooks
+    this.isSetup = false;
+    this.isBeforeMount = false;
+    this.isMounted = false;
+    this.isBeforeUpdate = false;
+    this.isUpdated = false;
+    this.isBeforeDestroy = false;
+    this.isDestroyed = false;
     return this;
   }
   log() {
@@ -24,7 +31,7 @@ export default class X_X {
   stylesheet = null;
   linkCSS(href) {
     this.stylesheet = document.createElement("link");
-    this.stylesheet.href = href.replace("@", $path);
+    this.stylesheet.href = reDirectUrl(href);
     this.stylesheet.rel = "stylesheet";
     return this;
   }
@@ -33,23 +40,29 @@ export default class X_X {
   onMountedcallback = null;
   setup(callback = () => {}) {
     this.setupcallback = () => {
+      this.isSetup = true;
       callback();
+      this.isSetup = false;
     };
     return this;
   }
   onBeforeMount(callback = () => {}) {
     this.onBeforeMountcallback = () => {
+      this.isBeforeMount = true;
       callback();
+      this.isBeforeMount = false;
     };
     return this;
   }
   onMounted(callback = () => {}) {
     this.onMountedcallback = () => {
+      this.isMounted = true;
       callback();
     };
     return this;
   }
   mount(parent) {
+    // if (this.router) this.router.currentRoute.component();
     const { el, attrs } = this.vNode;
     const isSelector = el.includes("#") || el.includes(".");
     isSelector
@@ -68,8 +81,8 @@ export default class X_X {
     if (this.stylesheet) document.head.appendChild(this.stylesheet);
     if (this.setupcallback) this.setupcallback();
     if (parent instanceof X_X) parent.element.appendChild(this.element);
-    if (this.child)
-      this.child.map((el) => {
+    if (this.children)
+      this.children.map((el) => {
         el.mount(this);
       });
     if (this.onBeforeMountcallback) this.onBeforeMountcallback();
@@ -77,12 +90,12 @@ export default class X_X {
     // console.log("mounted");
     return this;
   }
-  add(child) {
-    if (child instanceof X_X) {
-      this.child.push(child);
-    } else if (child instanceof Array) {
-      child.forEach((el) => {
-        this.child.push(el);
+  add(children) {
+    if (children instanceof X_X) {
+      this.children.push(children);
+    } else if (children instanceof Array) {
+      children.forEach((el) => {
+        this.children.push(el);
       });
     } else {
       throw new Error("低能嗎?");
@@ -103,7 +116,10 @@ export default class X_X {
     return this;
   }
   use(plugin) {
-    this[plugin.toString()] = plugin;
+    if (plugin instanceof XRouter) {
+      this.router = plugin;
+    }
+    return this;
   }
   class(className, add = true) {
     add
