@@ -6,7 +6,7 @@ export default class XRouter {
   }
 
   loadInitialRoute() {
-    this.navigate("/X_X");
+    this.navigate("/X_X/");
   }
 
   navigate(pathName) {

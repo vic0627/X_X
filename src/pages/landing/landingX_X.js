@@ -1,8 +1,8 @@
-import x_x from "../../../main.js";
+import X_X from "../../../modules/X_X.js";
 
-const LandingX_X = x_x
-  .createNode("main", { class: "landing" })
-  .linkCSS("@/src/pages/landing/landingX_X.css");
+const LandingX_X = new X_X("main", { class: "landing" }).linkCSS(
+  "@/src/pages/landing/landingX_X.css"
+);
 
 const landingH2 = LandingX_X.createChild("h1", {
   class: "landing-h2",

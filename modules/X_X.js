@@ -1,12 +1,18 @@
 import { delay, reCall } from "./timer/timer.js";
 import { reDirectUrl } from "./url/url.js";
-import XRouter from "./XRouter/XRouter.js";
-export default class X_X {
-  constructor(el = "div", attrs = {}, events = []) {
+
+class X_X {
+  constructor({ tag, attrs, text, events }) {
+    // DOM
+    this.root = null; // root DOM
     this.element = null; // real DOM
     this.children = []; // DOM tree of "this"
-    this.vNode = { el, attrs }; // virtual DOM
-    this.events = events; // types & handler
+    this.vNode = {
+      tag,
+      attrs,
+      text,
+      events,
+    }; // virtual DOM
 
     // hooks
     this.isSetup = false;
@@ -18,157 +24,94 @@ export default class X_X {
     this.isDestroyed = false;
     return this;
   }
+
   log() {
     console.log(this);
     return this;
   }
-  createNode(el = "div", attrs = {}, events = []) {
-    return new X_X(el, attrs, events);
-  }
-  createChild(el = "div", attrs = {}, events = []) {
-    return new X_X(el, attrs, events).addTo(this);
-  }
-  stylesheet = null;
-  linkCSS(href) {
-    this.stylesheet = document.createElement("link");
-    this.stylesheet.href = reDirectUrl(href);
-    this.stylesheet.rel = "stylesheet";
+
+  // 抓根元素，初始化頁面。
+  mount(root) {
+    if (this.root) return;
+    let rootElement;
+    if (root.includes("#")) {
+      rootElement = document.querySelector(root);
+    } else {
+      rootElement = document.getElementById(root);
+    }
+    this.root = rootElement;
+    this.element = rootElement;
+    if (this.children.length !== 0) {
+      this.children.forEach((el) => {
+        el.create();
+      });
+      this.renderFullTree();
+    }
     return this;
   }
-  setupcallback = null;
-  onBeforeMountcallback = null;
-  onMountedcallback = null;
-  setup(callback = () => {}) {
-    this.setupcallback = () => {
-      this.isSetup = true;
-      callback();
-      this.isSetup = false;
-    };
+
+  // 創新實例
+  createNode(vNode = {}) {
+    return new X_X(vNode);
+  }
+
+  // 插入父節點
+  addTo(parent) {
+    if (parent instanceof X_X) {
+      parent.children.push(this);
+    } else {
+      throw new Error(`${parent} is not an instance of X_X.`);
+    }
     return this;
   }
-  onBeforeMount(callback = () => {}) {
-    this.onBeforeMountcallback = () => {
-      this.isBeforeMount = true;
-      callback();
-      this.isBeforeMount = false;
-    };
-    return this;
+
+  // 插入子節點
+  add(child) {
+    if (child instanceof X_X) {
+      this.children.push(child);
+    } else {
+      throw new Error(`${child} is not an instance of X_X.`);
+    }
   }
-  onMounted(callback = () => {}) {
-    this.onMountedcallback = () => {
-      this.isMounted = true;
-      callback();
-    };
-    return this;
-  }
-  mount(parent) {
-    // if (this.router) this.router.currentRoute.component();
-    const { el, attrs } = this.vNode;
-    const isSelector = el.includes("#") || el.includes(".");
-    isSelector
-      ? (this.element = document.querySelector(el))
-      : (this.element = document.createElement(el));
-    if (attrs)
+
+  // 建立 real DOM
+  create() {
+    const { tag, attrs, text, events } = this.vNode;
+    if (tag) {
+      this.element = document.createElement(tag);
+    }
+    if (!this.element) return;
+    if (attrs) {
       Object.keys(attrs).forEach((key) => {
         this.element.setAttribute(key, attrs[key]);
       });
-    if (this.events) {
-      this.events.map((e) => {
-        this.element.addEventListener(e.type, e.callback);
+    }
+    if (events) {
+      // console.log(events);
+      events.forEach((e) => {
+        this.element.addEventListener(e.type, e.handler);
       });
     }
+    if (text) {
+      this.element.innerText = text;
+    }
+  }
 
-    if (this.stylesheet) document.head.appendChild(this.stylesheet);
-    if (this.setupcallback) this.setupcallback();
-    if (parent instanceof X_X) parent.element.appendChild(this.element);
-    if (this.children)
-      this.children.map((el) => {
-        el.mount(this);
+  renderFullTree() {
+    if (this.children.length !== 0) {
+      this.children.forEach((el) => {
+        this.element.appendChild(el.element);
+        // console.log(el);
+        if (el.children.length !== 0) {
+          el.children.forEach((els) => {
+            els.create();
+          });
+          el.renderFullTree()
+        };
       });
-    if (this.onBeforeMountcallback) this.onBeforeMountcallback();
-    if (this.onMountedcallback) delay(this.onMountedcallback, 10);
-    // console.log("mounted");
-    return this;
-  }
-  add(children) {
-    if (children instanceof X_X) {
-      this.children.push(children);
-    } else if (children instanceof Array) {
-      children.forEach((el) => {
-        this.children.push(el);
-      });
-    } else {
-      throw new Error("低能嗎?");
     }
-    return this;
-  }
-  addTo(parent) {
-    if (parent instanceof X_X) {
-      parent.add(this);
-    } else {
-      throw new Error("低能嗎?");
-    }
-    return this;
-  }
-  remove(child) {
-    child ? this.element.removeChild(child) : this.element.remove();
-    if (this.stylesheet) this.stylesheet.remove();
-    return this;
-  }
-  use(plugin) {
-    if (plugin instanceof XRouter) {
-      this.router = plugin;
-    }
-    return this;
-  }
-  class(className, add = true) {
-    add
-      ? this.element.classList.add(className)
-      : this.element.classList.remove(className);
-    return this;
-  }
-  attr(attrs = {}) {
-    Object.keys(attrs).forEach((key) => {
-      this.element.setAttribute(key, attrs[key]);
-    });
-    return this;
-  }
-  text(para) {
-    reCall((timer) => {
-      if (this.element) this.element.innerText = para;
-      clearInterval(timer);
-    });
-    return this;
-  }
-  html(para) {
-    this.element.innerHTML = para;
-    return this;
-  }
-  style(attr, value) {
-    this.element.style[attr] = value;
-    return this;
-  }
-  transform(trans) {
-    this.element.style.transform = trans;
-    return this;
-  }
-  on(event, callback) {
-    this.element.addEventListener(event, callback);
-    this.events.push({ event, callback });
-    return this;
-  }
-  off(event, callback) {
-    if (this.events) {
-      const cache = this.events;
-      cache.map((val) => {
-        this.element.removeEventListener(val.event, val.callback);
-        this.events.shift();
-      });
-    } else if (event && callback) {
-      this.element.removeEventListener(event, callback);
-    } else {
-      throw new Error("沒有註冊事件!");
-    }
-    return this;
   }
 }
+const x_x = new X_X({});
+
+export { x_x };
