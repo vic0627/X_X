@@ -1,8 +1,23 @@
 import { delay, reCall } from "./timer/timer.js";
 import { reDirectUrl } from "./url/url.js";
+import { reactive } from "./state/state.js";
+
+const tt = reactive();
+
+function getKeyArray(obj, arr) {
+  for (let key in obj) {
+    if (obj[key] instanceof Object && key !== "x_model") {
+      if ("_isProxy" in obj[key] && !arr.includes(key)) {
+        arr.push(key);
+      } else {
+        getKeyArray(obj[key]);
+      }
+    }
+  }
+}
 
 class X_X {
-  constructor({ tag, attrs, text, events }) {
+  constructor({ tag, attrs, innerText, events }) {
     // DOM
     this.root = null; // root DOM
     this.element = null; // real DOM
@@ -10,10 +25,10 @@ class X_X {
     this.vNode = {
       tag,
       attrs,
-      text,
+      innerText,
       events,
     }; // virtual DOM
-
+    this.needObserved = [];
     // hooks
     this.isSetup = false;
     this.isBeforeMount = false;
@@ -76,14 +91,22 @@ class X_X {
 
   // 建立 real DOM
   create() {
-    const { tag, attrs, text, events } = this.vNode;
+    const { tag, attrs, innerText, events } = this.vNode;
     if (tag) {
       this.element = document.createElement(tag);
     }
     if (!this.element) return;
     if (attrs) {
       Object.keys(attrs).forEach((key) => {
-        this.element.setAttribute(key, attrs[key]);
+        if (key === "x_model" && this.element.tagName === "INPUT") {
+          // console.log(attrs[key]);
+          this.element.value = attrs[key].value;
+          this.element.addEventListener("input", (e) => {
+            attrs[key].value = e.target.value;
+          });
+        } else {
+          this.element.setAttribute(key, attrs[key]);
+        }
       });
     }
     if (events) {
@@ -92,11 +115,20 @@ class X_X {
         this.element.addEventListener(e.type, e.handler);
       });
     }
-    if (text) {
-      this.element.innerText = text;
+    if (innerText) {
+      if (
+        Object.getPrototypeOf(innerText) ===
+          Object.getPrototypeOf(reactive()) &&
+        innerText.value
+      ) {
+        this.element.innerText = innerText.value;
+      } else if (typeof text !== "object") {
+        this.element.innerText = innerText;
+      }
     }
   }
 
+  // 渲染全 DOM Tree
   renderFullTree() {
     if (this.children.length !== 0) {
       this.children.forEach((el) => {
@@ -106,10 +138,23 @@ class X_X {
           el.children.forEach((els) => {
             els.create();
           });
-          el.renderFullTree()
-        };
+          el.renderFullTree();
+        }
       });
     }
+  }
+  ref = (ref) =>
+    reactive(ref, (prop, value) => {
+      this.children.forEach((el) => {
+        getKeyArray(el.vNode, el.needObserved);
+        if (el.needObserved.length > 0) console.log(el.needObserved);
+        el.needObserved.forEach((key) => {
+          el.element[key] = value;
+        });
+      });
+    });
+  text(t) {
+    this.element.innerText = t;
   }
 }
 const x_x = new X_X({});
