@@ -8,6 +8,7 @@ export default class XRouter {
   }
 
   loadInitialRoute() {
+    
     return this.navigate("/X_X/");
   }
 

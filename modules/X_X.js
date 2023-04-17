@@ -149,9 +149,9 @@ class X_X {
     // if (instance !== x_x) console.log(instance);
     // 有子節點就遍歷子節點，並掛載 DOM。
     if (instance.children.length !== 0) {
-      instance.children.forEach((el) => {
+      instance.children.forEach(async(el) => {
         if (instance.stylesheet) document.head.appendChild(instance.stylesheet);
-        instance.element.appendChild(el.element);
+        await instance.element.appendChild(el.element);
         // 若子節點還有子節點，就遞迴下去。
         if (el.children.length !== 0) el.renderFullTree();
       });
