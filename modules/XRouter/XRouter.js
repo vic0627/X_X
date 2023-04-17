@@ -1,23 +1,30 @@
+import { x_x } from "../X_X.js";
 export default class XRouter {
   constructor(routes) {
     this.routes = routes;
     this.currentRoute = null;
+    this.init = true;
     this.loadInitialRoute();
   }
 
   loadInitialRoute() {
-    this.navigate("/X_X/");
+    return this.navigate("/X_X/");
   }
 
   navigate(pathName) {
     const route = this.matchRoute(pathName);
-    console.log(route);
+    if (this.currentRoute === route) return;
     if (route) {
+      if (this.init) {
+        this.initX_X(route);
+      } else {
+        this.switchRoute(route);
+      }
       this.currentRoute = route;
-      this.renderRoute(route);
     } else {
       console.error(`Route not found for path ${pathName}`);
     }
+    return route;
   }
 
   matchRoute(pathName) {
@@ -26,5 +33,21 @@ export default class XRouter {
 
   renderRoute(route) {
     history.pushState(route.name, "", route.path);
+  }
+
+  initX_X(route) {
+    this.renderRoute(route);
+    route.component.addTo(x_x);
+    this.init = false;
+  }
+
+  switchRoute(route) {
+    this.renderRoute(route);
+    x_x.children = x_x.children.filter((x) => {
+      return x !== this.currentRoute.component;
+    });
+    route.component.addTo(x_x).create();
+    route.component.replace(this.currentRoute.component);
+    route.component.renderFullTree();
   }
 }

@@ -1,25 +1,10 @@
 import { delay, reCall } from "./timer/timer.js";
 import { reDirectUrl } from "./url/url.js";
-import { reactive } from "./state/state.js";
-
-const tt = reactive();
-
-function getKeyArray(obj, arr) {
-  for (let key in obj) {
-    if (obj[key] instanceof Object && key !== "x_model") {
-      if ("_isProxy" in obj[key] && !arr.includes(key)) {
-        arr.push(key);
-      } else {
-        getKeyArray(obj[key]);
-      }
-    }
-  }
-}
-
+import { reactive, updateDOM } from "./state/reactive.js";
+let root = null; // root DOM
 class X_X {
   constructor({ tag, attrs, innerText, events }) {
     // DOM
-    this.root = null; // root DOM
     this.element = null; // real DOM
     this.children = []; // DOM tree of "this"
     this.vNode = {
@@ -28,7 +13,12 @@ class X_X {
       innerText,
       events,
     }; // virtual DOM
+    // ref
     this.needObserved = [];
+    this.compareObserved = [];
+    // CSS
+    this.stylesheet = null;
+    this.router = null;
     // hooks
     this.isSetup = false;
     this.isBeforeMount = false;
@@ -46,15 +36,15 @@ class X_X {
   }
 
   // 抓根元素，初始化頁面。
-  mount(root) {
-    if (this.root) return;
+  mount(tag) {
+    if (root) return;
     let rootElement;
-    if (root.includes("#")) {
-      rootElement = document.querySelector(root);
+    if (tag.includes("#")) {
+      rootElement = document.querySelector(tag);
     } else {
-      rootElement = document.getElementById(root);
+      rootElement = document.getElementById(tag);
     }
-    this.root = rootElement;
+    root = rootElement;
     this.element = rootElement;
     if (this.children.length !== 0) {
       this.children.forEach((el) => {
@@ -71,7 +61,7 @@ class X_X {
   }
 
   // 插入父節點
-  addTo(parent) {
+  addTo(parent = root) {
     if (parent instanceof X_X) {
       parent.children.push(this);
     } else {
@@ -91,70 +81,116 @@ class X_X {
 
   // 建立 real DOM
   create() {
+    // 從 vNode 取出資料。
     const { tag, attrs, innerText, events } = this.vNode;
-    if (tag) {
-      this.element = document.createElement(tag);
-    }
+
+    // tag 存在，就建立 real DOM 放到 this.element。
+    if (tag) this.element = document.createElement(tag);
+    // this.element 未被定義就返回。
     if (!this.element) return;
+
+    // 標籤屬性。
     if (attrs) {
+      // 遍歷 attrs 物件。
       Object.keys(attrs).forEach((key) => {
-        if (key === "x_model" && this.element.tagName === "INPUT") {
-          // console.log(attrs[key]);
+        // 若屬性為 x_model 且此 real DOM 為 input，給予初值並掛載監聽。
+        if (
+          key === "x_model" &&
+          this.element.tagName === "INPUT" &&
+          attrs[key]._isProxy
+        ) {
           this.element.value = attrs[key].value;
           this.element.addEventListener("input", (e) => {
             attrs[key].value = e.target.value;
+          });
+          // 若其他任意屬性之值為 ref，將 ref 值取出並放到原狀態陣列。
+        } else if (attrs[key] instanceof Object && attrs[key]._isProxy) {
+          this.compareObserved.push({ key, value: attrs[key].value });
+          if (attrs[key].value)
+            this.element.setAttribute(key, attrs[key].value);
+        } else if (key === "to") {
+          this.element.addEventListener("click", () => {
+            x_x.router.navigate(attrs[key]);
           });
         } else {
           this.element.setAttribute(key, attrs[key]);
         }
       });
+      // return this;
     }
+
+    // 遍歷事件監聽陣列，依序掛載。
     if (events) {
-      // console.log(events);
       events.forEach((e) => {
         this.element.addEventListener(e.type, e.handler);
       });
     }
+
     if (innerText) {
-      if (
-        Object.getPrototypeOf(innerText) ===
-          Object.getPrototypeOf(reactive()) &&
-        innerText.value
-      ) {
+      // 若值為 ref，，將 ref 值取出放到原狀態陣列，再設定 DOM。
+      if (innerText._isProxy && innerText.value) {
+        this.compareObserved.push({ key: "innerText", value: innerText.value });
         this.element.innerText = innerText.value;
       } else if (typeof text !== "object") {
         this.element.innerText = innerText;
       }
     }
-  }
 
-  // 渲染全 DOM Tree
-  renderFullTree() {
     if (this.children.length !== 0) {
-      this.children.forEach((el) => {
-        this.element.appendChild(el.element);
-        // console.log(el);
-        if (el.children.length !== 0) {
-          el.children.forEach((els) => {
-            els.create();
-          });
-          el.renderFullTree();
-        }
+      this.children.forEach((els) => {
+        els.create();
+        if (els.stylesheet) document.head.appendChild(els.stylesheet);
       });
     }
   }
-  ref = (ref) =>
-    reactive(ref, (prop, value) => {
-      this.children.forEach((el) => {
-        getKeyArray(el.vNode, el.needObserved);
-        if (el.needObserved.length > 0) console.log(el.needObserved);
-        el.needObserved.forEach((key) => {
-          el.element[key] = value;
-        });
+
+  // 渲染全 DOM Tree
+  renderFullTree(instance = this) {
+    // if (instance !== x_x) console.log(instance);
+    // 有子節點就遍歷子節點，並掛載 DOM。
+    if (instance.children.length !== 0) {
+      instance.children.forEach((el) => {
+        if (instance.stylesheet) document.head.appendChild(instance.stylesheet);
+        instance.element.appendChild(el.element);
+        // 若子節點還有子節點，就遞迴下去。
+        if (el.children.length !== 0) el.renderFullTree();
       });
+    }
+  }
+
+  // unmount 全 DOM Tree
+  removeFullTree(instance = this) {
+    if (instance.stylesheet) document.head.removeChild(instance.stylesheet);
+    instance.element.remove();
+  }
+
+  // 監聽變動資料
+  ref = (ref) =>
+    /** observer 函式
+     * @param {Proxy} target 目標 ref。
+     * @param {string} prop 目標 ref 屬性。
+     * @param {any} value 目標 ref 值。
+     **/
+    reactive(ref, (target, prop, value) => {
+      updateDOM(this.children);
     });
-  text(t) {
-    this.element.innerText = t;
+
+  // 連結 CSS
+  linkCSS(href) {
+    this.stylesheet = document.createElement("link");
+    this.stylesheet.href = reDirectUrl(href);
+    this.stylesheet.rel = "stylesheet";
+    return this;
+  }
+
+  useRouter(router) {
+    this.router = router;
+    return this;
+  }
+
+  replace(oldChild) {
+    oldChild.removeFullTree();
+    root.appendChild(this.element);
   }
 }
 const x_x = new X_X({});

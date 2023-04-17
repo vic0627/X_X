@@ -1,16 +1,17 @@
 import XRouter from "../modules/XRouter/XRouter.js";
-import LandingX_X from "../src/pages/landing/landingX_X.js";
-import AboutX_X from "../src/pages/about/aboutX_X.js";
+import Landing from "../src/pages/landing/landing.js";
+import About from "../src/pages/about/about.js";
+
 const routes = [
   {
     path: "/X_X/",
     name: "landing",
-    component: LandingX_X,
+    component: Landing,
   },
   {
-    path: "/X_X/about",
+    path: "/X_X/about/",
     name: "about",
-    component: AboutX_X,
+    component: About,
   },
 ];
 
