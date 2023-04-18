@@ -27,5 +27,23 @@ const aboutPNode = {
 };
 const aboutP = x_x.createNode(aboutPNode).addTo(About);
 
+const aboutListNode = {
+  tag: "ul",
+  attrs: {
+    class: "about-list",
+  },
+};
+const aboutList = x_x.createNode(aboutListNode).addTo(About);
+
+for (let i = 0; i < 10; i++) {
+  const aboutListItemNode = {
+    tag: "li",
+    attrs: {
+      class: "about-list-item",
+    },
+    innerText: `item ${i}`,
+  };
+  const aboutListItem = x_x.createNode(aboutListItemNode).addTo(aboutList);
+}
 
 export default About;

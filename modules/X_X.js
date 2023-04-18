@@ -151,7 +151,7 @@ class X_X {
   }
 
   // 渲染全 DOM Tree
-  async renderFullTree(instance = this) {
+  renderFullTree(instance = this) {
     if (instance.bm) instance.bm();
     this.isBeforeMount = true;
     // 有子節點就遍歷子節點，並掛載 DOM。
@@ -159,17 +159,19 @@ class X_X {
     if (instance.children.length !== 0) {
       instance.children.forEach(async (el) => {
         if (el.stylesheet) document.head.appendChild(instance.stylesheet);
-        await new Promise((resolve) => {
-          delay(() => instance.element.appendChild(el.element));
-          resolve();
-        });
+        instance.element.appendChild(el.element);
         // 若子節點還有子節點，就遞迴下去。
         if (el.children.length !== 0) el.renderFullTree();
       });
     }
     this.isBeforeMount = false;
-    if (instance.m) instance.m();
-    this.isMounted = true;
+    if (instance.m)
+      delay(() =>
+        delay(() => {
+          instance.m();
+          this.isMounted = true;
+        })
+      );
   }
 
   // unmount 全 DOM Tree

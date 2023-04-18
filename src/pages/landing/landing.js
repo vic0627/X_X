@@ -31,7 +31,8 @@ const landingPNode = {
 const landingP = x_x.createNode(landingPNode).addTo(Landing);
 
 Landing.mounted(() => {
-  landingH2.element.classList.add("h2-mount")
+  console.log(landingH2);
+  landingH2.element.classList.add("h2-mount");
 });
 
 export default Landing;
