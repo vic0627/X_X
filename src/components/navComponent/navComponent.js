@@ -16,7 +16,7 @@ const navH1Node = {
   tag: "h1",
   attrs: {
     class: "nav-h1",
-    to: "/X_X/"
+    to: "/"
   },
   innerText: "X_X",
 };
@@ -26,7 +26,7 @@ const navAboutNode = {
   tag: "p",
   attrs: {
     class: "nav-about",
-    to: "/X_X/about/"
+    to: "/about"
   },
   innerText: "about",
 };

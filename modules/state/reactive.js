@@ -1,12 +1,13 @@
 import updateDOM from "./updateDOM.js";
 
 function reactive(obj = {}, onChange = () => {}) {
-  if (obj.value) throw new TypeError("'value' is the reserve word of ref.");
-  let ref = obj;
-  if (!(obj instanceof Object)) {
-    ref = { value: obj };
-  }
-  ref._isProxy = true;
+  if (obj.value || obj._isProxy)
+    throw new TypeError("'value' is the reserve word of ref.");
+  const ref = { value: obj };
+  Object.defineProperty(ref, "_isProxy", {
+    value: true,
+    writable: false,
+  });
   return new Proxy(ref, {
     get(target, prop) {
       // console.log(receiver)

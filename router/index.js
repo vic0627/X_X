@@ -4,12 +4,12 @@ import About from "../src/pages/about/about.js";
 
 const routes = [
   {
-    path: "/X_X/",
+    path: "/",
     name: "landing",
     component: Landing,
   },
   {
-    path: "/X_X/about/",
+    path: "/about",
     name: "about",
     component: About,
   },

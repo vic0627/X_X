@@ -146,12 +146,12 @@ class X_X {
 
   // 渲染全 DOM Tree
   renderFullTree(instance = this) {
-    // if (instance !== x_x) console.log(instance);
     // 有子節點就遍歷子節點，並掛載 DOM。
+    if (instance.stylesheet) document.head.appendChild(instance.stylesheet);
     if (instance.children.length !== 0) {
-      instance.children.forEach(async(el) => {
-        if (instance.stylesheet) document.head.appendChild(instance.stylesheet);
-        await instance.element.appendChild(el.element);
+      instance.children.forEach((el) => {
+        if (el.stylesheet) document.head.appendChild(instance.stylesheet);
+        delay(() => instance.element.appendChild(el.element));
         // 若子節點還有子節點，就遞迴下去。
         if (el.children.length !== 0) el.renderFullTree();
       });
@@ -160,8 +160,15 @@ class X_X {
 
   // unmount 全 DOM Tree
   removeFullTree(instance = this) {
-    if (instance.stylesheet) document.head.removeChild(instance.stylesheet);
+    if (instance.children.length !== 0) {
+      instance.children.forEach((el) => {
+        el.element.remove();
+        if (el.stylesheet) document.head.removeChild(el.stylesheet);
+        if (el.children.length !== 0) el.removeFullTree();
+      });
+    }
     instance.element.remove();
+    if (instance.stylesheet) document.head.removeChild(instance.stylesheet);
   }
 
   // 監聽變動資料

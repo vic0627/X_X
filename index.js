@@ -4,8 +4,4 @@ import NavComponent from "./src/components/navComponent/navComponent.js";
 
 x_x.linkCSS("@/style.css").useRouter(xr).mount("X_X");
 
-window.onpopstate = function (event) {
-  alert(
-    "location: " + document.location + ", state: " + JSON.stringify(event.state)
-  );
-};
+

@@ -8,8 +8,7 @@ export default class XRouter {
   }
 
   loadInitialRoute() {
-    
-    return this.navigate("/X_X/");
+    return this.navigate(window.location.pathname);
   }
 
   navigate(pathName) {
