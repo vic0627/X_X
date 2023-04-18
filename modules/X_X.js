@@ -1,7 +1,10 @@
 import { delay, reCall } from "./timer/timer.js";
 import { reDirectUrl } from "./url/url.js";
 import { reactive, updateDOM } from "./state/reactive.js";
+import { s } from "./hooks/hooks.js";
+
 let root = null; // root DOM
+
 class X_X {
   constructor({ tag, attrs, innerText, events }) {
     // DOM
@@ -26,7 +29,7 @@ class X_X {
     this.isBeforeUpdate = false;
     this.isUpdated = false;
     this.isBeforeDestroy = false;
-    this.isDestroyed = false;
+    this.isDestroyed = true;
     return this;
   }
 
@@ -116,7 +119,6 @@ class X_X {
           this.element.setAttribute(key, attrs[key]);
         }
       });
-      // return this;
     }
 
     // 遍歷事件監聽陣列，依序掛載。
@@ -142,24 +144,38 @@ class X_X {
         if (els.stylesheet) document.head.appendChild(els.stylesheet);
       });
     }
+
+    if (this.s) this.s();
+    this.isSetup = true;
+    this.isDestroyed = false;
   }
 
   // 渲染全 DOM Tree
-  renderFullTree(instance = this) {
+  async renderFullTree(instance = this) {
+    if (instance.bm) instance.bm();
+    this.isBeforeMount = true;
     // 有子節點就遍歷子節點，並掛載 DOM。
     if (instance.stylesheet) document.head.appendChild(instance.stylesheet);
     if (instance.children.length !== 0) {
-      instance.children.forEach((el) => {
+      instance.children.forEach(async (el) => {
         if (el.stylesheet) document.head.appendChild(instance.stylesheet);
-        delay(() => instance.element.appendChild(el.element));
+        await new Promise((resolve) => {
+          delay(() => instance.element.appendChild(el.element));
+          resolve();
+        });
         // 若子節點還有子節點，就遞迴下去。
         if (el.children.length !== 0) el.renderFullTree();
       });
     }
+    this.isBeforeMount = false;
+    if (instance.m) instance.m();
+    this.isMounted = true;
   }
 
   // unmount 全 DOM Tree
   removeFullTree(instance = this) {
+    if (instance.bd) instance.bd();
+    this.isBeforeDestroy = true;
     if (instance.children.length !== 0) {
       instance.children.forEach((el) => {
         el.element.remove();
@@ -169,6 +185,11 @@ class X_X {
     }
     instance.element.remove();
     if (instance.stylesheet) document.head.removeChild(instance.stylesheet);
+    this.isSetup = false;
+    this.isMounted = false;
+    this.isBeforeDestroy = false;
+    if (instance.d) instance.d();
+    this.isDestroyed = true;
   }
 
   // 監聽變動資料
@@ -198,6 +219,59 @@ class X_X {
   replace(oldChild) {
     oldChild.removeFullTree();
     root.appendChild(this.element);
+  }
+
+  setup(func = () => {}) {
+    this.s = () => {
+      if (this.isSetup) return;
+      func();
+    };
+  }
+
+  beforeMount(func = () => {}) {
+    this.bm = () => {
+      if (this.isBeforeMount) return;
+      func();
+    };
+  }
+
+  mounted(func = () => {}) {
+    this.m = () => {
+      if (this.isMounted) return;
+      func();
+    };
+  }
+
+  beforeUpdate(func = () => {}) {
+    this.bu = () => {
+      if (this.isBeforeUpdate) return;
+      this.isUpdated = false;
+      func();
+      this.isBeforeUpdate = true;
+    };
+  }
+
+  updated(func = () => {}) {
+    this.u = () => {
+      if (this.isUpdated) return;
+      this.isBeforeUpdate = false;
+      func();
+      this.isUpdated = true;
+    };
+  }
+
+  beforeDestroy(func = () => {}) {
+    this.bd = () => {
+      if (this.isBeforeDestroy) return;
+      func();
+    };
+  }
+
+  destroyed(func = () => {}) {
+    this.d = () => {
+      if (this.isDestroyed) return;
+      func();
+    };
   }
 }
 const x_x = new X_X({});

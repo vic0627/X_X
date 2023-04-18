@@ -1,3 +1,8 @@
 .landing {
     padding: 15% 10% 0;
 }
+
+.h2-mount {
+    margin: 40px 0;
+    transition: all .5s;
+}
