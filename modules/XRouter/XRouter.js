@@ -47,7 +47,7 @@ export default class XRouter {
       return x !== this.currentRoute.component;
     });
     route.component.addTo(x_x).create();
-    route.component.replace(this.currentRoute.component);
+    this.currentRoute.component.removeFullTree();
     route.component.renderFullTree();
   }
 }

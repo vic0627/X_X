@@ -216,11 +216,6 @@ class X_X {
     return this;
   }
 
-  replace(oldChild) {
-    oldChild.removeFullTree();
-    root.appendChild(this.element);
-  }
-
   setup(func = () => {}) {
     this.s = () => {
       if (this.isSetup) return;
